@@ -1,0 +1,45 @@
+{
+  "name": "ircjs",
+  "version": "0.0.0",
+  "description": "A simple query layer for the IrChain RPC.",
+  "main": "index.js",
+  "files": [
+    "dist",
+    "internals",
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "lint": "npm run lint:js",
+    "prepublishOnly": "npm run build",
+    "build": "cross-env BABEL_ENV=commonjs babel src --out-dir lib --copy-files",
+    "build:ens": "browserify example/index.js -o example/bundle.js",
+    "coveralls": "npm run test-travis && cat ./coverage/lcov.info | coveralls"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ldcc/ircjs.git"
+  },
+  "keywords": [
+    "irchain",
+    "query",
+    "rpc",
+    "webu"
+  ],
+  "author": "ldcc <contact@irchain.io>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ldcc/ircjs/issues"
+  },
+  "homepage": "https://github.com/ldcc/ircjs#readme",
+  "dependencies": {
+    "rlp": "2.1.0",
+    "xhr2": "0.1.3",
+    "bn.js": "4.11.8",
+    "js-sha3": "0.8.0",
+    "elliptic": "6.4.1",
+    "randomhex": "0.1.5",
+    "bignumber.js": "^7.2.1",
+    "promise-to-callback": "^1.0.0"
+  }
+}
