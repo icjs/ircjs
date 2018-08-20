@@ -1,5 +1,5 @@
 const schema = require('./schema');
-const util = require('./util');
+const util = require('./utils');
 const toBN = util.toBN;
 const stripHexPrefix = util.stripHexPrefix;
 const BN = require('bn.js');

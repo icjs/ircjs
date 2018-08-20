@@ -142,11 +142,14 @@ function fromAscii(stringValue) {
  * @returns {Array} output just a simple array of output keys
  */
 function getKeys(params, key, allowEmpty) {
-  if (!Array.isArray(params)) { throw new Error(`method getKeys expecting type Array as 'params' input, got '${typeof params}'`); }
-  if (typeof key !== 'string') { throw new Error(`method getKeys expecting type String for input 'key' got '${typeof key}'.`); }
+  if (!Array.isArray(params)) {
+    throw new Error(`method getKeys expecting type Array as 'params' input, got '${typeof params}'`);
+  }
+  if (typeof key !== 'string') {
+    throw new Error(`method getKeys expecting type String for input 'key' got '${typeof key}'.`);
+  }
 
   const result = [];
-
   for (let i = 0; i < params.length; i++) {
     let value = params[i][key];
     if (allowEmpty && !value) {

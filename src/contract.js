@@ -1,6 +1,6 @@
 const abi = require('./abi');
 const IrcFilter = require('./filter');
-const getKeys = require('./util').getKeys;
+const getKeys = require('./utils').getKeys;
 const keccak256 = require('js-sha3').keccak_256;
 const promiseToCallback = require('promise-to-callback');
 

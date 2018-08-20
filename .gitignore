@@ -22,5 +22,6 @@ package-lock.json
 .idea/
 
 ### Others
-coverage
-dist/
+lib/
+!src/lib
+coverage/

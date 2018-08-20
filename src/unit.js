@@ -1,5 +1,5 @@
 const BN = require('bn.js');
-const toBN = require('./util').toBN;
+const toBN = require('./utils').toBN;
 
 const zero = new BN(0);
 const negative1 = new BN(-1);

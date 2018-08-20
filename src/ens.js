@@ -7,7 +7,6 @@
 // const registryAbi = require('./res/ens/registry.json');
 // const resolverAbi = require('./res/ens/resolver.json');
 //
-//
 // // var (
 // // MainnetGenesisHash = common.HexToHash("0xf29c3da3e1710517cbb3a555ab20981ec2c9abacbbcb914ab91e8c23edfbf4d0")
 // // TestnetGenesisHash = common.HexToHash("0x389d168191585e7a14b01a654c02058053abf3ca3d167efb69a51dec86d9cfbc")
@@ -20,7 +19,7 @@
 // const NotFoundError = new Error('ENS name not defined.');
 // const BadCharacterError = new Error('Illegal Character for ENS.');
 //
-// class Ens {
+// class IrcEns {
 //   constructor(opts = {}) {
 //     const {provider, network} = opts;
 //     let {registryAddress} = opts;
@@ -146,5 +145,5 @@
 //                .then(results => results[0]);
 //   }
 // }
-
-module.exports = {};
+//
+// module.exports = IrcEns;

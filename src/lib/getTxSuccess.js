@@ -1,12 +1,12 @@
-module.exports = eth => (txHash, callback) => {
+module.exports = irc => (txHash, callback) => {
   let count = 0;
 
-  const timeout = eth.options.timeout || 800000;
-  const interval = eth.options.interval || 7000;
+  const timeout = irc.options.timeout || 800000;
+  const interval = irc.options.interval || 7000;
 
   const prom = new Promise((resolve, reject) => {
     const txInterval = setInterval(() => {
-      eth.getTransactionReceipt(txHash, (err, result) => {
+      irc.getTransactionReceipt(txHash, (err, result) => {
         if (err) {
           clearInterval(txInterval);
           reject(err);

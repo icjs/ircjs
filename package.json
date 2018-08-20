@@ -2,7 +2,7 @@
   "name": "ircjs",
   "version": "0.0.0",
   "description": "A simple query layer for the IrChain RPC.",
-  "main": "index.js",
+  "main": "src/irc.js",
   "files": [
     "dist",
     "internals",
@@ -10,11 +10,14 @@
     "src"
   ],
   "scripts": {
-    "lint": "npm run lint:js",
     "prepublishOnly": "npm run build",
-    "build": "cross-env BABEL_ENV=commonjs babel src --out-dir lib --copy-files",
+    "build": "npm run build:commonjs && npm run npm run build:umd",
+    "build:commonjs": "cross-env BABEL_ENV=commonjs babel src --out-dir lib --copy-files",
+    "build:stats": "cross-env BABEL_ENV=commonjs NODE_ENV=production webpack --config ./webpack.config.js --progress --profile --json > dist/stats.json",
+    "build:umd": "cross-env BABEL_ENV=commonjs NODE_ENV=production webpack --config ./webpack.config.js --progress --optimize-minimize",
     "build:ens": "browserify example/index.js -o example/bundle.js",
-    "coveralls": "npm run test-travis && cat ./coverage/lcov.info | coveralls"
+    "coveralls": "npm run test-travis && cat ./coverage/lcov.info | coveralls",
+    "asd": "which babel"
   },
   "repository": {
     "type": "git",
@@ -33,13 +36,30 @@
   },
   "homepage": "https://github.com/ldcc/ircjs#readme",
   "dependencies": {
-    "rlp": "2.1.0",
-    "xhr2": "0.1.3",
-    "bn.js": "4.11.8",
-    "js-sha3": "0.8.0",
-    "elliptic": "6.4.1",
-    "randomhex": "0.1.5",
     "bignumber.js": "^7.2.1",
-    "promise-to-callback": "^1.0.0"
+    "bn.js": "4.11.8",
+    "elliptic": "6.4.1",
+    "js-sha3": "0.8.0",
+    "promise-to-callback": "^1.0.0",
+    "randomhex": "0.1.5",
+    "rlp": "2.1.0",
+    "xhr2": "0.1.3"
+  },
+  "devDependencies": {
+    "babel-cli": "6.26.0",
+    "babel-core": "6.26.3",
+    "babel-loader": "7.1.5",
+    "babel-register": "6.26.0",
+    "chai": "3.5.0",
+    "coveralls": "2.11.9",
+    "cross-env": "5.2.0",
+    "eventsource-polyfill": "0.9.6",
+    "istanbul": "0.4.5",
+    "json-loader": "0.5.7",
+    "mocha": "3.1.2",
+    "pre-commit": "1.1.3",
+    "rimraf": "2.3.4",
+    "webpack": "4.16.5",
+    "webpack-cli": "^3.1.0"
   }
 }

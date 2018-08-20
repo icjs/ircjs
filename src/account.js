@@ -2,7 +2,7 @@ const elliptic = require('elliptic');
 const keccak256 = require('js-sha3').keccak_256;
 const randomhex = require('randomhex');
 const secp256k1 = new (elliptic.ec)('secp256k1');
-const stripHexPrefix = require('./util').stripHexPrefix;
+const stripHexPrefix = require('./utils').stripHexPrefix;
 
 /**
  * Get the address from a public key

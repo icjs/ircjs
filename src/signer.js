@@ -2,8 +2,8 @@ const rlp = require('rlp');
 const elliptic = require('elliptic');
 const keccak256 = require('js-sha3').keccak_256;
 const secp256k1 = new (elliptic.ec)('secp256k1');
-const stripHexPrefix = require('./util').stripHexPrefix;
-const toBN = require('./util').toBN;
+const stripHexPrefix = require('./utils').stripHexPrefix;
+const toBN = require('./utils').toBN;
 
 function stripZeros(buffer) {
   let i;
@@ -22,12 +22,12 @@ function bnToBuffer(bn) {
 }
 
 const transactionFields = [
-  { name: 'nonce', maxLength: 32, number: true },
-  { name: 'gasPrice', maxLength: 32, number: true },
-  { name: 'gasLimit', maxLength: 32, number: true },
-  { name: 'to', length: 20 },
-  { name: 'value', maxLength: 32, number: true },
-  { name: 'data' },
+  {name: 'nonce', maxLength: 32, number: true},
+  {name: 'gasPrice', maxLength: 32, number: true},
+  {name: 'gasLimit', maxLength: 32, number: true},
+  {name: 'to', length: 20},
+  {name: 'value', maxLength: 32, number: true},
+  {name: 'data'},
 ];
 
 /**
@@ -50,7 +50,7 @@ function recover(rawTx, v, r, s) {
     raw[fieldIndex] = signedTransaction[fieldIndex];
   });
 
-  const publicKey = secp256k1.recoverPubKey((new Buffer(keccak256(rlp.encode(raw)), 'hex')), { r, s }, v - 27);
+  const publicKey = secp256k1.recoverPubKey((new Buffer(keccak256(rlp.encode(raw)), 'hex')), {r, s}, v - 27);
   return (new Buffer(publicKey.encode('hex', false), 'hex')).slice(1);
 }
 
@@ -65,9 +65,15 @@ function recover(rawTx, v, r, s) {
  */
 
 function sign(transaction, privateKey, toObject) {
-  if (typeof transaction !== 'object' || transaction === null) { throw new Error(`transaction input must be a type 'object', got '${typeof(transaction)}'`); }
-  if (typeof privateKey !== 'string') { throw new Error('private key input must be a string'); }
-  if (!privateKey.match(/^(0x)[0-9a-fA-F]{64}$/)) { throw new Error('invalid private key value, private key must be a prefixed hexified 32 byte string (i.e. "0x..." 64 chars long).'); }
+  if (typeof privateKey !== 'string') {
+    throw new Error('private key input must be a string');
+  }
+  if (typeof transaction !== 'object' || transaction === null) {
+    throw new Error(`transaction input must be a type 'object', got '${typeof(transaction)}'`);
+  }
+  if (!privateKey.match(/^(0x)[0-9a-fA-F]{64}$/)) {
+    throw new Error('invalid private key value, private key must be a prefixed hexified 32 byte string.');
+  }
 
   const raw = [];
 
@@ -103,7 +109,7 @@ function sign(transaction, privateKey, toObject) {
 
   // private key is not stored in memory
   const signature = secp256k1.keyFromPrivate(new Buffer(privateKey.slice(2), 'hex'))
-                    .sign((new Buffer(keccak256(rlp.encode(raw)), 'hex')), { canonical: true });
+                             .sign((new Buffer(keccak256(rlp.encode(raw)), 'hex')), {canonical: true});
 
   raw.push(new Buffer([27 + signature.recoveryParam]));
   raw.push(bnToBuffer(signature.r));

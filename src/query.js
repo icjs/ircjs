@@ -1,5 +1,5 @@
 const format = require('./format');
-const IrcRPC = require('./irc');
+const IrcRPC = require('./rpc');
 const promiseToCallback = require('promise-to-callback');
 
 module.exports = IrcQuery;

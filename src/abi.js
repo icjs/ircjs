@@ -1,13 +1,7 @@
-const utils = require('./lib/abi-util');
-const uint256Coder = utils.uint256Coder;
-const coderBoolean = utils.coderBoolean;
-const coderFixedBytes = utils.coderFixedBytes;
-const coderAddress = utils.coderAddress;
-const coderDynamicBytes = utils.coderDynamicBytes;
-const coderString = utils.coderString;
-const coderArray = utils.coderArray;
-const paramTypePart = utils.paramTypePart;
-const getParamCoder = utils.getParamCoder;
+const coder = require('./lib/abiCoder');
+const uint256Coder = coder.uint256Coder;
+const getParamCoder = coder.getParamCoder;
+const util = require('./utils');
 
 function Result() {}
 
@@ -16,10 +10,10 @@ function encodeParams(types, values) {
     throw new Error(`while encoding params, types/values mismatch, Your contract requires ${types.length} types (arguments), and you passed in ${values.length}`);
   }
 
-  var parts = [];
+  const parts = [];
 
   types.forEach(function(type, index) {
-    var coder = getParamCoder(type);
+    const coder = getParamCoder(type);
     parts.push({dynamic: coder.dynamic, value: coder.encode(values[index])});
   });
 
@@ -27,7 +21,7 @@ function encodeParams(types, values) {
     return parseInt(32 * Math.ceil(size / 32));
   }
 
-  var staticSize = 0, dynamicSize = 0;
+  let staticSize = 0, dynamicSize = 0;
   parts.forEach(function(part) {
     if (part.dynamic) {
       staticSize += 32;
@@ -37,10 +31,10 @@ function encodeParams(types, values) {
     }
   });
 
-  var offset = 0, dynamicOffset = staticSize;
-  var data = new Buffer(staticSize + dynamicSize);
+  let offset = 0, dynamicOffset = staticSize;
+  const data = new Buffer(staticSize + dynamicSize);
 
-  parts.forEach(function(part, index) {
+  parts.forEach(function(part) {
     if (part.dynamic) {
       uint256Coder.encode(dynamicOffset).copy(data, offset);
       offset += 32;
@@ -65,19 +59,20 @@ function decodeParams(names, types, data, useNumberedParams = true) {
     names = [];
   }
 
-  data = utils.hexOrBuffer(data);
-  var values = new Result();
+  data = coder.hexOrBuffer(data);
+  const values = new Result();
 
-  var offset = 0;
+  let offset = 0;
   types.forEach(function(type, index) {
-    var coder = getParamCoder(type);
+    let result;
+    const coder = getParamCoder(type);
 
     if (coder.dynamic) {
-      var dynamicOffset = uint256Coder.decode(data, offset);
-      var result = coder.decode(data, dynamicOffset.value.toNumber());
+      const dynamicOffset = uint256Coder.decode(data, offset);
+      result = coder.decode(data, dynamicOffset.value.toNumber());
       offset += dynamicOffset.consumed;
     } else {
-      var result = coder.decode(data, offset);
+      result = coder.decode(data, offset);
       offset += result.consumed;
     }
 
@@ -94,25 +89,23 @@ function decodeParams(names, types, data, useNumberedParams = true) {
 
 // create an encoded method signature from an ABI object
 function encodeSignature(method) {
-  const signature = `${method.name}(${utils.getKeys(method.inputs, 'type').join(',')})`;
-  const signatureEncoded = `0x${(new Buffer(utils.keccak256(signature), 'hex')).slice(0, 4).toString('hex')}`;
-
-  return signatureEncoded;
+  const signature = `${method.name}(${util.getKeys(method.inputs, 'type').join(',')})`;
+  return `0x${(new Buffer(util.keccak256(signature), 'hex')).slice(0, 4).toString('hex')}`;
 }
 
 // encode method ABI object with values in an array, output bytecode
 function encodeMethod(method, values) {
-  const paramsEncoded = encodeParams(utils.getKeys(method.inputs, 'type'), values).substring(2);
+  const paramsEncoded = encodeParams(util.getKeys(method.inputs, 'type'), values).substring(2);
 
   return `${encodeSignature(method)}${paramsEncoded}`;
 }
 
 // decode method data bytecode, from method ABI object
 function decodeMethod(method, data) {
-  const outputNames = utils.getKeys(method.outputs, 'name', true);
-  const outputTypes = utils.getKeys(method.outputs, 'type');
+  const outputNames = util.getKeys(method.outputs, 'name', true);
+  const outputTypes = util.getKeys(method.outputs, 'type');
 
-  return decodeParams(outputNames, outputTypes, utils.hexOrBuffer(data));
+  return decodeParams(outputNames, outputTypes, coder.hexOrBuffer(data));
 }
 
 // decode method data bytecode, from method ABI object
@@ -121,17 +114,17 @@ function encodeEvent(eventObject, values) {
 }
 
 function eventSignature(eventObject) {
-  const signature = `${eventObject.name}(${utils.getKeys(eventObject.inputs, 'type').join(',')})`;
+  const signature = `${eventObject.name}(${util.getKeys(eventObject.inputs, 'type').join(',')})`;
 
-  return `0x${utils.keccak256(signature)}`;
+  return `0x${util.keccak256(signature)}`;
 }
 
 // decode method data bytecode, from method ABI object
 function decodeEvent(eventObject, data, topics, useNumberedParams = true) {
   const nonIndexed = eventObject.inputs.filter((input) => !input.indexed);
-  const nonIndexedNames = utils.getKeys(nonIndexed, 'name', true);
-  const nonIndexedTypes = utils.getKeys(nonIndexed, 'type');
-  const event = decodeParams(nonIndexedNames, nonIndexedTypes, utils.hexOrBuffer(data), useNumberedParams);
+  const nonIndexedNames = util.getKeys(nonIndexed, 'name', true);
+  const nonIndexedTypes = util.getKeys(nonIndexed, 'type');
+  const event = decodeParams(nonIndexedNames, nonIndexedTypes, coder.hexOrBuffer(data), useNumberedParams);
   const topicOffset = eventObject.anonymous ? 0 : 1;
 
   eventObject.inputs.filter((input) => input.indexed).map((input, i) => {
