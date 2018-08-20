@@ -1,4 +1,4 @@
-// const IrcEns = require('./ens');
+const IrcEns = require('./ens');
 const IrcQuery = require('./query');
 const IrcFilter = require('./filter');
 const IrcContract = require('./contract');
@@ -41,14 +41,18 @@ function Irc(provider, options) {
   self.getTxSuccess = getTxSuccess(self);
 }
 
-Irc.BN = BN;
 Irc.abi = abi;
 Irc.account = account;
 Irc.format = format;
 Irc.schema = schema;
 Irc.signer = signer;
+Irc.HttpProvider = HttpProvider;
+Irc.Contract = IrcContract;
+Irc.Query = IrcQuery;
+Irc.ENS = IrcEns;
 Irc.isAddress = (val) => utils.isHexString(val, 20);
 Irc.keccak256 = (val) => `0x${keccak256(val)}`;
+Irc.BN = BN;
 Irc.Buffer = Buffer;
 Irc.isHexString = utils.isHexString;
 Irc.fromWei = unit.fromWei;
@@ -58,4 +62,3 @@ Irc.fromAscii = utils.fromAscii;
 Irc.toAscii = utils.toAscii;
 Irc.fromUtf8 = utils.fromUtf8;
 Irc.toUtf8 = utils.toUtf8;
-Irc.HttpProvider = HttpProvider;

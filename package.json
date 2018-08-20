@@ -1,8 +1,8 @@
 {
-  "name": "ircjs",
+  "name": "irc.js",
   "version": "0.0.0",
   "description": "A simple query layer for the IrChain RPC.",
-  "main": "src/irc.js",
+  "main": "dist/ircjs.min.js",
   "files": [
     "dist",
     "internals",
@@ -39,6 +39,7 @@
     "js-sha3": "0.8.0",
     "promise-to-callback": "^1.0.0",
     "randomhex": "0.1.5",
+    "idna-uts46-hx": "^2.3.1",
     "rlp": "2.1.0",
     "xhr2": "0.1.3"
   },
