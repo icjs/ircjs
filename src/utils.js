@@ -241,6 +241,7 @@ function toBN(arg) {
 
 module.exports = {
   keccak256,
+  BN,
   toBN,
   arrayContainsArray,
   toBuffer,

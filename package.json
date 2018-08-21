@@ -22,9 +22,8 @@
   },
   "keywords": [
     "irchain",
-    "query",
-    "rpc",
-    "webu"
+    "webu",
+    "irc"
   ],
   "author": "ldcc <contact@irchain.io>",
   "license": "MIT",

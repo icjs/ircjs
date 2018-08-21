@@ -24,7 +24,6 @@ function IrcContract(query) {
         contractABI,
       });
     };
-
     output.new = function newContract() {
       let providedTxObject = {};
       let newMethodCallback = null;
