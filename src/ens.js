@@ -20,7 +20,8 @@ const NotFoundError = new Error('ENS name not defined.');
 const BadCharacterError = new Error('Illegal Character for ENS.');
 
 class IrcEns {
-  static networkMap = networkMap;
+  static get networkMap() {return networkMap;} ;
+
   constructor(opts = {}) {
     const {provider, network} = opts;
     let {registryAddress} = opts;
