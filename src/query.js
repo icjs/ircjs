@@ -1,56 +1,40 @@
 const format = require('./format');
 const IrcRPC = require('./rpc');
 const promiseToCallback = require('promise-to-callback');
+const HttpProvider = require('./provider');
 
 module.exports = IrcQuery;
 
-function IrcQuery(provider, options) {
-  const self = this;
-  const optionsObject = options || {};
-
-  if (!(this instanceof IrcQuery)) {
-    throw new Error(
-      'the IrcQuery object requires the "new" flag in order to function normally.');
+class IrcQuery {
+  constructor(provider, options) {
+    options = options || {};
+    provider = provider || HttpProvider('http:///localhost:8545/');
+    this.options = Object.assign({
+      debug: options.debug || false,
+      logger: options.logger || console,
+      jsonSpace: options.jsonSpace || 0,
+    });
+    this.rpc = new IrcRPC(provider, {});
+    this.setProvider = this.rpc.setProvider;
   }
-  if (typeof provider !== 'object') {
-    throw new Error(`the Irc object requires that the first input 'provider' must be an object, got '${typeof provider}'.`);
-  }
 
-  self.options = Object.assign({
-    debug: optionsObject.debug || false,
-    logger: optionsObject.logger || console,
-    jsonSpace: optionsObject.jsonSpace || 0,
-  });
-  self.rpc = new IrcRPC(provider, {});
-  self.setProvider = self.rpc.setProvider;
+  log(message) {
+    this.options.debug && this.options.logger.log(message);
+  };
 }
 
-IrcQuery.prototype.log = function log(message) {
-  const self = this;
-  if (self.options.debug) self.options.logger.log(`${message}`);
-};
-
-Object.keys(format.schema.methods).forEach((rpcMethodName) => {
-  Object.defineProperty(IrcQuery.prototype, rpcMethodName.replace('irc_', ''), {
+Object.keys(format.schema.methods).forEach((rpcMethod) => {
+  Object.defineProperty(IrcQuery.prototype, rpcMethod.replace('irc_', ''), {
     enumerable: true,
-    value: generateFnFor(rpcMethodName, format.schema.methods[rpcMethodName]),
+    value: generateFnFor(rpcMethod),
   });
 });
 
-function generateFnFor(rpcMethodName, methodObject) {
+function generateFnFor(rpcMethod) {
   return function outputMethod() {
-    let callback = null;
-    let inputs = null;
-    let inputError = null;
-    const self = this;
     const args = [].slice.call(arguments);
-    const protoMethodName = rpcMethodName.replace('irc_', '');
-
-    if (args.length > 0 && typeof args[args.length - 1] === 'function') {
-      callback = args.pop();
-    }
-
-    const promise = performCall.call(this);
+    const callback = utils.popCallback(args);
+    const promise = performCall.call(this, args, rpcMethod);
 
     // if callback provided, convert promise to callback
     if (callback) {
@@ -59,58 +43,42 @@ function generateFnFor(rpcMethodName, methodObject) {
 
     // only return promise if no callback provided
     return promise;
-
-    async function performCall() {
-      // validate arg length
-      if (args.length < methodObject[2]) {
-        throw new Error(`method '${protoMethodName}' requires at least ${methodObject[2]} input (format type ${methodObject[0][0]}), ${args.length} provided.`);
-      }
-      if (args.length > methodObject[0].length) {
-        throw new Error(`method '${protoMethodName}' requires at most ${methodObject[0].length} params, ${args.length} provided '${JSON.stringify(
-          args, null, self.options.jsonSpace)}'.`);
-      }
-
-      // set default block
-      if (methodObject[3] && args.length < methodObject[3]) {
-        args.push('latest');
-      }
-
-      // format inputs
-      this.log(`attempting method formatting for '${protoMethodName}' with inputs ${JSON.stringify(args, null, this.options.jsonSpace)}`);
-      try {
-        inputs = format.formatInputs(rpcMethodName, args);
-        this.log(`method formatting success for '${protoMethodName}' with formatted result: ${JSON.stringify(
-          inputs,
-          null,
-          this.options.jsonSpace)}`);
-      } catch (formattingError) {
-        throw new Error(`while formatting inputs '${JSON.stringify(
-          args,
-          null,
-          this.options.jsonSpace)}' for method '${protoMethodName}' error: ${formattingError}`);
-      }
-
-      // perform rpc call
-      const result = await this.rpc.sendAsync({method: rpcMethodName, params: inputs}, null);
-
-      // format result
-      try {
-        this.log(`attempting method formatting for '${protoMethodName}' with raw outputs: ${JSON.stringify(
-          result,
-          null,
-          this.options.jsonSpace)}`);
-        const methodOutputs = format.formatOutputs(rpcMethodName, result);
-        this.log(`method formatting success for '${protoMethodName}' formatted result: ${JSON.stringify(
-          methodOutputs,
-          null,
-          this.options.jsonSpace)}`);
-        return methodOutputs;
-      } catch (outputFormattingError) {
-        throw new Error(`while formatting outputs from RPC '${JSON.stringify(
-          result,
-          null,
-          this.options.jsonSpace)}' for method '${protoMethodName}' ${outputFormattingError}`);
-      }
-    }
   };
+}
+
+async function performCall(args, rpcMethod) {
+  const protoMethod = rpcMethod.replace('irc_', '');
+  const methodObj = format.schema.methods[rpcMethod];
+  const self = this;
+  const stringify = data => JSON.stringify(data, null, self.options.jsonSpace);
+
+  // validate arg length
+  if (args.length < methodObj[2]) {
+    throw new Error(`'${protoMethod}' requires at least ${methodObj[2]} input.`);
+  }
+  if (args.length > methodObj[0].length) {
+    throw new Error(`'${protoMethod}' requires at most ${methodObj[0].length} params.`);
+  }
+
+  // set default block
+  if (methodObj[3] && args.length < methodObj[3]) {
+    args.push('latest');
+  }
+
+  // format inputs
+  let inputs = null;
+  try {
+    inputs = format.formatInputs(rpcMethod, args);
+  } catch (err) {
+    throw new Error(`while formatting inputs '${stringify(args)}' for method '${protoMethod}', ${err}`);
+  }
+
+  // perform rpc call
+  const result = await self.rpc.sendAsync({method: rpcMethod, params: inputs}, null);
+  // format result
+  try {
+    return format.formatOutputs(rpcMethod, result);
+  } catch (err) {
+    throw new Error(`while formatting outputs '${stringify(result)}' for method '${protoMethod}', ${err}`);
+  }
 }

@@ -59,7 +59,7 @@ function decodeParams(names, types, data, useNumberedParams = true) {
     names = [];
   }
 
-  data = coder.hexOrBuffer(data);
+  data = util.hexToBuffer(data);
   const values = new Result();
 
   let offset = 0;
@@ -105,7 +105,7 @@ function decodeMethod(method, data) {
   const outputNames = util.getKeys(method.outputs, 'name', true);
   const outputTypes = util.getKeys(method.outputs, 'type');
 
-  return decodeParams(outputNames, outputTypes, coder.hexOrBuffer(data));
+  return decodeParams(outputNames, outputTypes, util.hexToBuffer(data));
 }
 
 // decode method data bytecode, from method ABI object
@@ -124,7 +124,7 @@ function decodeEvent(eventObject, data, topics, useNumberedParams = true) {
   const nonIndexed = eventObject.inputs.filter((input) => !input.indexed);
   const nonIndexedNames = util.getKeys(nonIndexed, 'name', true);
   const nonIndexedTypes = util.getKeys(nonIndexed, 'type');
-  const event = decodeParams(nonIndexedNames, nonIndexedTypes, coder.hexOrBuffer(data), useNumberedParams);
+  const event = decodeParams(nonIndexedNames, nonIndexedTypes, util.hexToBuffer(data), useNumberedParams);
   const topicOffset = eventObject.anonymous ? 0 : 1;
 
   eventObject.inputs.filter((input) => input.indexed).map((input, i) => {

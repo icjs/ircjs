@@ -1,6 +1,6 @@
 // External Deps
-const Eth = require('./query');
-const EthContract = require('./contract');
+const IrcQuery = require('./query');
+const IrcContract = require('./contract');
 const namehash = require('./lib/ensNameHash');
 
 // ABIs
@@ -21,6 +21,7 @@ const BadCharacterError = new Error('Illegal Character for ENS.');
 
 class IrcEns {
   static get networkMap() {return networkMap;} ;
+  static get namehash() {return namehash}
 
   constructor(opts = {}) {
     const {provider, network} = opts;
@@ -28,18 +29,17 @@ class IrcEns {
 
     // Validations
     if (!provider) {
-      throw new Error('The EthJsENS Constructor requires a provider.');
+      throw new Error('The IrcJsENS Constructor requires a provider.');
     }
 
     // Requires EITHER a network or a registryAddress
     if (!network && !registryAddress) {
-      throw new Error('The EthJsENS Constructor requires a network or registry address.');
+      throw new Error('The IrcJsENS Constructor requires a network or registry address.');
     }
 
     this.provider = provider;
-    this.eth = new Eth(this.provider);
-    this.contract = new EthContract(this.eth);
-    this.namehash = namehash;
+    this.irc = new IrcQuery(this.provider);
+    this.contract = new IrcContract(this.irc);
 
     // Link to Registry
     this.Registry = this.contract(registryAbi);
@@ -53,8 +53,8 @@ class IrcEns {
   }
 
   lookup(name = '') {
-    return this.getNamehash(name)
-               .then((node) => {
+    return IrcEns.getNamehash(name)
+                 .then((node) => {
                  if (node === emptyHash) {
                    return Promise.reject(NotFoundError);
                  }
@@ -62,17 +62,17 @@ class IrcEns {
                });
   }
 
-  getNamehash(name) {
+  static getNamehash(name) {
     try {
-      return Promise.resolve(namehash(name));
+      return Promise.resolve(namehash.hash(name));
     } catch (e) {
       return Promise.reject(BadCharacterError);
     }
   }
 
   getOwner(name = '') {
-    return this.getNamehash(name)
-               .then(node => this.getOwnerForNode(node));
+    return IrcEns.getNamehash(name)
+                 .then(node => this.getOwnerForNode(node));
   }
 
   getOwnerForNode(node) {
@@ -91,13 +91,13 @@ class IrcEns {
   }
 
   getResolver(name = '') {
-    return this.getNamehash(name)
-               .then(node => this.getResolverForNode(node));
+    return IrcEns.getNamehash(name)
+                 .then(node => this.getResolverForNode(node));
   }
 
   getResolverAddress(name = '') {
-    return this.getNamehash(name)
-               .then(node => this.getResolverAddressForNode(node));
+    return IrcEns.getNamehash(name)
+                 .then(node => this.getResolverAddressForNode(node));
   }
 
   getResolverForNode(node) {
@@ -140,11 +140,11 @@ class IrcEns {
     }
 
     const name = `${address.toLowerCase()}.addr.reverse`;
-    const node = namehash(name);
-    return this.getNamehash(name)
-               .then(node => this.getResolverForNode(node))
-               .then(resolver => resolver.name(node))
-               .then(results => results[0]);
+    const node = IrcEns.namehash(name);
+    return IrcEns.getNamehash(name)
+                 .then(node => this.getResolverForNode(node))
+                 .then(resolver => resolver.name(node))
+                 .then(results => results[0]);
   }
 }
 

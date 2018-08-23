@@ -106,7 +106,6 @@ function toAscii(hex) {
  *
  * @method fromUtf8
  * @param {String} stringValue
- * @param {Number} optional padding
  * @returns {String} hex representation of input string
  */
 function fromUtf8(stringValue) {
@@ -119,7 +118,6 @@ function fromUtf8(stringValue) {
  *
  * @method fromAscii
  * @param {String} stringValue
- * @param {Number} optional padding
  * @returns {String} hex representation of input string
  */
 function fromAscii(stringValue) {
@@ -154,13 +152,36 @@ function getKeys(params, key, allowEmpty) {
     let value = params[i][key];
     if (allowEmpty && !value) {
       value = '';
-    } else if (typeof(value) !== 'string') {
+    } else if (typeof value !== 'string') {
       throw new Error('invalid abi');
     }
     result.push(value);
   }
-
   return result;
+}
+
+/**
+ *
+ * @param {String|Buffer} valueInput
+ * @returns {Buffer}
+ */
+function hexToBuffer(valueInput) {
+  let value = valueInput;
+  if (!Buffer.isBuffer(value)) {
+    if (!isHexString(value, null)) {
+      const error = new Error(name ? (`invalid ${name}`) : 'invalid hex or buffer, must be a prefixed alphanumeric even length hex string');
+      error.reason = 'invalid hex string, hex must be prefixed and alphanumeric (e.g. 0x023..)';
+      error.value = value;
+      throw error;
+    }
+
+    value = value.substring(2);
+    if (value.length % 2 !== 0) {
+      value = `0${value}`;
+    }
+    value = new Buffer(value, 'hex');
+  }
+  return value;
 }
 
 /**
@@ -239,13 +260,22 @@ function toBN(arg) {
   throw new Error('[number-to-bn] while converting number ' + JSON.stringify(arg) + ' to BN.js instance, error: invalid number value. Value must be an integer, hex string, BN or BigNumber instance. Note, decimals are not supported.');
 }
 
+/**
+ * Pops the last element of args if which typeof function
+ * @param {Array} args
+ * @returns {boolean|Array}
+ */
+popCallback = (args) => typeof args[args.length - 1] === 'function' && args.pop();
+
 module.exports = {
   keccak256,
+  arrayContainsArray,
+  getBinarySize,
   BN,
   toBN,
-  arrayContainsArray,
   toBuffer,
-  getBinarySize,
+  isHexString,
+  hexToBuffer,
   isHexPrefixed,
   stripHexPrefix,
   padToEven,
@@ -255,5 +285,5 @@ module.exports = {
   toAscii,
   toUtf8,
   getKeys,
-  isHexString,
+  popCallback,
 };

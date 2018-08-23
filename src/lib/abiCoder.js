@@ -3,24 +3,6 @@ const util = require('../utils');
 
 const uint256Coder = coderNumber(32, false);
 
-function hexOrBuffer(valueInput, name) {
-  let value = valueInput;
-  if (!Buffer.isBuffer(value)) {
-    if (!util.isHexString(value, null)) {
-      const error = new Error(name ? (`invalid ${name}`) : 'invalid hex or buffer, must be a prefixed alphanumeric even length hex string');
-      error.reason = 'invalid hex string, hex must be prefixed and alphanumeric (e.g. 0x023..)';
-      error.value = value;
-      throw error;
-    }
-
-    value = value.substring(2);
-    if (value.length % 2) { value = `0${value}`; }
-    value = new Buffer(value, 'hex');
-  }
-
-  return value;
-}
-
 function coderNumber(size, signed) {
   return {
     encode: function encodeNumber(valueInput) {
@@ -76,7 +58,7 @@ function coderFixedBytes(length) {
   return {
     encode: function encodeFixedBytes(valueInput) {
       let value = valueInput;
-      value = hexOrBuffer(value);
+      value = util.hexToBuffer(value);
 
       if (value.length === 32) { return value; }
 
@@ -103,7 +85,7 @@ const coderAddress = {
     if (!util.isHexString(
       value,
       20)) { throw new Error('while encoding address, invalid address value, not alphanumeric 20 byte hex string'); }
-    value = hexOrBuffer(value);
+    value = util.hexToBuffer(value);
     result.fill(0);
     value.copy(result, 12);
     return result;
@@ -154,7 +136,7 @@ function decodeDynamicBytesHelper(data, offset) {
 
 const coderDynamicBytes = {
   encode: function encodeDynamicBytes(value) {
-    return encodeDynamicBytesHelper(hexOrBuffer(value));
+    return encodeDynamicBytesHelper(util.hexToBuffer(value));
   },
   decode: function decodeDynamicBytes(data, offset) {
     const result = decodeDynamicBytesHelper(data, offset);
@@ -241,7 +223,7 @@ const paramTypePart = new RegExp(/^((u?int|bytes)([0-9]*)|(address|bool|string)|
 function getParamCoder(typeInput) {
   let type = typeInput;
   let coder = null;
-  const invalidTypeErrorMessage = `while getting param coder (getParamCoder) type value ${JSON.stringify(type)} is either invalid or unsupported by ethjs-abi.`;
+  const invalidTypeErrorMessage = `while getting param coder type value ${JSON.stringify(type)} is either invalid or unsupported.`;
 
   while (type) {
     let part = type.match(paramTypePart);
@@ -300,7 +282,6 @@ function getParamCoder(typeInput) {
 }
 
 module.exports = {
-  hexOrBuffer,
   coderNumber,
   uint256Coder,
   coderBoolean,

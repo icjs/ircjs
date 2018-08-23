@@ -23,7 +23,7 @@ module.exports = Irc;
  * @method Irc
  * @param {Object} provider the webu standard provider object
  * @param {Object} options the Irc options object
- * @returns {Object} eth Irc object instance
+ * @returns {Object} irc Irc object instance
  * @throws if the new flag is not used in construction
  */
 
@@ -32,11 +32,11 @@ function Irc(provider, options) {
   const self = this;
   self.options = options || {};
   const query = new IrcQuery(provider, self.options.query);
-  Object.keys(Object.getPrototypeOf(query)).forEach((methodName) => {
-    self[methodName] = (...args) => query[methodName].apply(query, args);
-  });
-  self.filter = new IrcFilter(query, self.options.query);
-  self.contract = new IrcContract(query, self.options.query);
+  // FIXME
+  Object.keys(Object.getPrototypeOf(query)).forEach(method => self[method] = query[method].apply(query));
+  // self[methodName] = (...args) => query[methodName].apply(query, args);
+  self.filter = new IrcFilter(query);
+  self.contract = new IrcContract(query);
   self.currentProvider = query.rpc.currentProvider;
   self.setProvider = query.setProvider;
   self.getTxSuccess = getTxSuccess(self);
