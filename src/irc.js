@@ -13,7 +13,7 @@ const utils = require('./utils');
 const scanLink = require('./scan-link');
 const keccak256 = require('js-sha3').keccak_256;
 const BN = require('bn.js');
-const getTxSuccess = require('./lib/getTxSuccess');
+const getTxSuccess = require('./lib/get-tx-success');
 
 module.exports = Irc;
 
@@ -32,11 +32,11 @@ function Irc(provider, options) {
   const self = this;
   self.options = options || {};
   const query = new IrcQuery(provider, self.options.query);
-  // FIXME
-  Object.keys(Object.getPrototypeOf(query)).forEach(method => self[method] = query[method].apply(query));
-  // self[methodName] = (...args) => query[methodName].apply(query, args);
+  Object.keys(Object.getPrototypeOf(query)).forEach(
+    // FIXME  self[method] = (...args) => query[method].apply(query, args);
+    method => self[method] = query[method].apply(query));
   self.filter = new IrcFilter(query);
-  self.contract = new IrcContract(query);
+  self.contract = abi => (new IrcContract(query))(abi); // parentheses for helping IDE to type inference
   self.currentProvider = query.rpc.currentProvider;
   self.setProvider = query.setProvider;
   self.getTxSuccess = getTxSuccess(self);

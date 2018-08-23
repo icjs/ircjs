@@ -1,7 +1,7 @@
 // External Deps
 const IrcQuery = require('./query');
 const IrcContract = require('./contract');
-const namehash = require('./lib/ensNameHash');
+const namehash = require('./lib/ens-name-hash');
 
 // ABIs
 const registryAbi = require('./res/ens/registry.json');

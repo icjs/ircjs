@@ -7,57 +7,50 @@ const promiseToCallback = require('promise-to-callback');
 module.exports = IrcContract;
 
 function IrcContract(query) {
-  return function contractFactory(contractABI, contractBytecode, contractDefaultTxObject) {
+  return function(abi, bytecode, defaultTx) {
     // validate params
-    if (!Array.isArray(contractABI)) { throw new Error(`Contract ABI must be type Array, got type ${typeof contractABI}`); }
-    if (typeof contractBytecode !== 'undefined' && typeof contractBytecode !== 'string') { throw new Error(`Contract bytecode must be type String, got type ${typeof contractBytecode}`); }
-    if (typeof contractDefaultTxObject !== 'undefined' && typeof contractDefaultTxObject !== 'object') { throw new Error(`Contract default tx object must be type Object, got type ${typeof contractABI}`); }
+    if (!Array.isArray(abi)) {
+      throw new Error(`Contract ABI must be type Array, got type ${typeof abi}`);
+    }
+    if (typeof bytecode !== 'undefined' && typeof bytecode !== 'string') {
+      throw new Error(`Contract bytecode must be type String, got type ${typeof bytecode}`);
+    }
+    if (typeof defaultTx !== 'undefined' && typeof defaultTx !== 'object') {
+      throw new Error(`Contract default tx object must be type Object, got type ${typeof abi}`);
+    }
 
     // build contract object
-    const output = {};
-    output.at = function contractAtAddress(address) {
-      return new Contract({
-        address,
-        query,
-        contractBytecode,
-        contractDefaultTxObject,
-        contractABI,
-      });
+    return {
+      at: address => new Contract({address, query, bytecode, defaultTx, abi}),
+      new: () => {
+        const args = [].slice.call(arguments);
+        const callback = utils.popCallback(args);
+        const providedTx = hasTransactionObject(args) && args.pop();
+        const constructor = getConstructorFromABI(abi);
+        const assembleTx = Object.assign({}, defaultTx, providedTx);
+
+        // set contract deploy bytecode
+        if (bytecode) {
+          assembleTx.data = bytecode;
+        }
+        // append encoded constructor arguments
+        if (constructor) {
+          assembleTx.data += abi.encodeParams(getKeys(constructor.inputs, 'type'), args).substring(2);
+        }
+
+        return callback ? query.sendTransaction(assembleTx, callback) : query.sendTransaction(assembleTx);
+      },
     };
-    output.new = function newContract() {
-      let providedTxObject = {};
-      let newMethodCallback = null;
-      const newMethodArgs = [].slice.call(arguments);
-      if (typeof newMethodArgs[newMethodArgs.length - 1] === 'function') newMethodCallback = newMethodArgs.pop();
-      if (hasTransactionObject(newMethodArgs)) providedTxObject = newMethodArgs.pop();
-      const constructorMethod = getConstructorFromABI(contractABI);
-      const assembleTxObject = Object.assign({}, contractDefaultTxObject, providedTxObject);
-
-      // set contract deploy bytecode
-      if (contractBytecode) {
-        assembleTxObject.data = contractBytecode;
-      }
-
-      // append encoded constructor arguments
-      if (constructorMethod) {
-        const constructorBytecode = abi.encodeParams(getKeys(constructorMethod.inputs, 'type'), newMethodArgs).substring(2);
-        assembleTxObject.data = `${assembleTxObject.data}${constructorBytecode}`;
-      }
-
-      return newMethodCallback ? query.sendTransaction(assembleTxObject, newMethodCallback) : query.sendTransaction(assembleTxObject);
-    };
-
-    return output;
   };
 }
 
 function Contract(opts = {}) {
   const self = this;
-  self.abi = opts.contractABI || [];
+  self.abi = opts.abi || [];
   self.query = opts.query;
   self.address = opts.address || '0x';
-  self.bytecode = opts.contractBytecode || '0x';
-  self.defaultTxObject = opts.contractDefaultTxObject || {};
+  self.bytecode = opts.bytecode || '0x';
+  self.defaultTx = opts.defaultTx || {};
   self.filters = new IrcFilter(self.query);
 
   getCallableMethodsFromABI(self.abi).forEach((methodObject) => {
@@ -114,7 +107,7 @@ function Contract(opts = {}) {
 
     if (hasTransactionObject(methodArgs)) providedTxObject = methodArgs.pop();
     const methodTxObject = Object.assign({},
-      self.defaultTxObject,
+      self.defaultTx,
       providedTxObject, {
         to: self.address,
       });
@@ -166,10 +159,10 @@ const hasTransactionObject = function(args) {
   return false;
 };
 
-const getConstructorFromABI = function(contractABI) {
-  return contractABI.filter((json) => (json.type === 'constructor'))[0];
+const getConstructorFromABI = function(abi) {
+  return abi.filter((json) => (json.type === 'constructor'))[0];
 };
 
-const getCallableMethodsFromABI = function(contractABI) {
-  return contractABI.filter((json) => ((json.type === 'function' || json.type === 'event') && json.name.length > 0));
+const getCallableMethodsFromABI = function(abi) {
+  return abi.filter((json) => ((json.type === 'function' || json.type === 'event') && json.name.length > 0));
 };

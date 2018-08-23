@@ -13,7 +13,7 @@ function constructFilter(filterName, query) {
       if (self.filterId !== null && Object.keys(self.watchers).length > 0) {
         query.getFilterChanges(self.filterId, (changeError, changeResult) => {
           const decodedChangeResults = [];
-          var decodingError = null;
+          let decodingError = null;
 
           if (!changeError) {
             try {
@@ -63,7 +63,7 @@ function constructFilter(filterName, query) {
     const self = this;
     const id = Math.random().toString(36).substring(7);
     const output = new Promise((resolve, reject) => {
-      self.watchers[id] = { resolve, reject, callback, stop: false };
+      self.watchers[id] = {resolve, reject, callback, stop: false};
     });
 
     output.stopWatching = function stopWatching() {
@@ -104,7 +104,8 @@ function constructFilter(filterName, query) {
 
     // if a param object was presented, push that into the inputs
     if (filterName === 'Filter') {
-      filterInputs.push(Object.assign(self.options.defaultFilterObject,
+      filterInputs.push(Object.assign(
+        self.options.defaultFilterObject,
         (args[args.length - 1] || {})));
     }
 
@@ -137,11 +138,14 @@ function constructFilter(filterName, query) {
  * @returns {Object} output an IrcFilter instance
  * @throws error if new is not used
  */
-
 function IrcFilter(query) {
   const self = this;
-  if (!(self instanceof IrcFilter)) { throw new Error('the IrcFilter object must be instantiated with `new` flag...'); }
-  if (typeof query !== 'object') { throw new Error('the IrcFilter object must be instantiated with an IrcQuery instance.'); }
+  if (!(self instanceof IrcFilter)) {
+    throw new Error('the IrcFilter object must be instantiated with `new` flag...');
+  }
+  if (typeof query !== 'object') {
+    throw new Error('the IrcFilter object must be instantiated with an IrcQuery instance.');
+  }
 
   self.Filter = constructFilter('Filter', query);
   self.BlockFilter = constructFilter('BlockFilter', query);

@@ -1,4 +1,4 @@
-const coder = require('./lib/abiCoder');
+const coder = require('./lib/abi-coder');
 const uint256Coder = coder.uint256Coder;
 const getParamCoder = coder.getParamCoder;
 const util = require('./utils');
