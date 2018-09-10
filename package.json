@@ -1,6 +1,6 @@
 {
   "name": "irc.js",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "A simple query layer for the IrChain RPC.",
   "main": "src/irc.js",
   "files": [
