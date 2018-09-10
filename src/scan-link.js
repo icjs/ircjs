@@ -6,7 +6,7 @@ prefixForNetwork = network => {
       prefix = 'scan.';
       break;
     case 3: // test net
-      prefix = 'p51';
+      prefix = 'test.';
       break;
     default:
       prefix = '';

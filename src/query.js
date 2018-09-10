@@ -1,9 +1,8 @@
 const format = require('./format');
+const utils = require('./utils');
 const IrcRPC = require('./rpc');
 const promiseToCallback = require('promise-to-callback');
 const HttpProvider = require('./provider');
-
-module.exports = IrcQuery;
 
 class IrcQuery {
   constructor(provider, options) {
@@ -82,3 +81,5 @@ async function performCall(args, rpcMethod) {
     throw new Error(`while formatting outputs '${stringify(result)}' for method '${protoMethod}', ${err}`);
   }
 }
+
+module.exports = IrcQuery;

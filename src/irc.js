@@ -33,8 +33,7 @@ function Irc(provider, options) {
   self.options = options || {};
   const query = new IrcQuery(provider, self.options.query);
   Object.keys(Object.getPrototypeOf(query)).forEach(
-    // FIXME  self[method] = (...args) => query[method].apply(query, args);
-    method => self[method] = query[method].apply(query));
+    method => self[method] = query[method].bind(query));
   self.filter = new IrcFilter(query);
   self.contract = abi => (new IrcContract(query))(abi); // parentheses for helping IDE to type inference
   self.currentProvider = query.rpc.currentProvider;
