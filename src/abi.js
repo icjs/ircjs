@@ -138,7 +138,7 @@ function decodeCall(method, data) {
   // const method = state.signatureIDs[data.slice(2, 10)];
   const outputNames = util.getKeys(method.outputs, 'name', true);
   const outputTypes = util.getKeys(method.outputs, 'type');
-  return decodeParams(outputNames, outputTypes, data);
+  return decodeParams(outputNames, outputTypes, data).map(param => param.value);
 }
 
 // decode method data bytecode, from method ABI object
