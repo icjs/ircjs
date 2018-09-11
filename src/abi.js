@@ -2,12 +2,26 @@ const coder = require('./lib/abi-coder');
 const uint256Coder = coder.uint256Coder;
 const getParamCoder = coder.getParamCoder;
 const util = require('./utils');
+const stdTokenAbi = require('./res/ir-std-token-abi')['ir-token'];
 
-function Result() {}
+const state = {
+  savedABIs: stdTokenAbi,
+  signatureIDs: {},
+};
+
+stdTokenAbi.forEach((method) => {
+  if (method.name) {
+    const signatureId = method.type === 'event' ? eventSignature(method) : encodeSignature(method);
+    console.log(signatureId);
+    state.signatureIDs[signatureId.slice(2)] = method;
+  }
+});
+
+/// Encodes
 
 function encodeParams(types, values) {
   if (types.length !== values.length) {
-    throw new Error(`while encoding params, types/values mismatch, Your contract requires ${types.length} types (arguments), and you passed in ${values.length}`);
+    throw new Error(`while encoding params, Your contract requires ${types.length} types (arguments), and you passed in ${values.length}`);
   }
 
   const parts = [];
@@ -32,7 +46,7 @@ function encodeParams(types, values) {
   });
 
   let offset = 0, dynamicOffset = staticSize;
-  const data = new Buffer(staticSize + dynamicSize);
+  const data = Buffer.alloc(staticSize + dynamicSize);
 
   parts.forEach(function(part) {
     if (part.dynamic) {
@@ -50,8 +64,32 @@ function encodeParams(types, values) {
   return '0x' + data.toString('hex');
 }
 
+// create an encoded method signature from an ABI object
+function encodeSignature(method) {
+  const signature = `${method.name}(${util.getKeys(method.inputs, 'type').join(',')})`;
+  return '0x' + util.keccak256(signature).slice(0, 8);
+}
+
+function eventSignature(method) {
+  const signature = `${method.name}(${util.getKeys(method.inputs, 'type').join(',')})`;
+  return '0x' + util.keccak256(signature);
+}
+
+// encode method ABI object with values in an array, output bytecode
+function encodeMethod(method, values) {
+  const paramsEncoded = encodeParams(util.getKeys(method.inputs, 'type'), values).substring(2);
+  return encodeSignature(method) + paramsEncoded;
+}
+
+// decode method data bytecode, from method ABI object
+function encodeEvent(eventObject, values) {
+  return encodeMethod(eventObject, values);
+}
+
+/// Decodes
+
 // decode bytecode data from output names and types
-function decodeParams(names, types, data, useNumberedParams = true) {
+function decodeParams(names, types, data) {
   // Names is optional, so shift over all the parameters if not provided
   if (arguments.length < 3) {
     data = types;
@@ -60,12 +98,12 @@ function decodeParams(names, types, data, useNumberedParams = true) {
   }
 
   data = util.hexToBuffer(data);
-  const values = new Result();
 
   let offset = 0;
-  types.forEach(function(type, index) {
+
+  return types.keys().map(index => {
+    const coder = getParamCoder(types[index]);
     let result;
-    const coder = getParamCoder(type);
 
     if (coder.dynamic) {
       const dynamicOffset = uint256Coder.decode(data, offset);
@@ -75,98 +113,50 @@ function decodeParams(names, types, data, useNumberedParams = true) {
       result = coder.decode(data, offset);
       offset += result.consumed;
     }
-
-    if (useNumberedParams) {
-      values[index] = result.value;
-    }
-
-    if (names[index]) {
-      values[names[index]] = result.value;
-    }
+    return {
+      name: names[index],
+      value: result.value,
+      type: types[index],
+    };
   });
-  return values;
-}
-
-// create an encoded method signature from an ABI object
-function encodeSignature(method) {
-  const signature = `${method.name}(${util.getKeys(method.inputs, 'type').join(',')})`;
-  return `0x${(new Buffer(util.keccak256(signature), 'hex')).slice(0, 4).toString('hex')}`;
-}
-
-// encode method ABI object with values in an array, output bytecode
-function encodeMethod(method, values) {
-  const paramsEncoded = encodeParams(util.getKeys(method.inputs, 'type'), values).substring(2);
-
-  return `${encodeSignature(method)}${paramsEncoded}`;
 }
 
 // decode method data bytecode, from method ABI object
-function decodeMethod(method, data) {
-  const outputNames = util.getKeys(method.outputs, 'name', true);
-  const outputTypes = util.getKeys(method.outputs, 'type');
-
-  return decodeParams(outputNames, outputTypes, util.hexToBuffer(data));
-}
-
-// decode method data bytecode, from method ABI object
-function encodeEvent(eventObject, values) {
-  return encodeMethod(eventObject, values);
-}
-
-function eventSignature(eventObject) {
-  const signature = `${eventObject.name}(${util.getKeys(eventObject.inputs, 'type').join(',')})`;
-
-  return `0x${util.keccak256(signature)}`;
-}
-
-// decode method data bytecode, from method ABI object
-function decodeEvent(eventObject, data, topics, useNumberedParams = true) {
-  const nonIndexed = eventObject.inputs.filter((input) => !input.indexed);
-  const nonIndexedNames = util.getKeys(nonIndexed, 'name', true);
-  const nonIndexedTypes = util.getKeys(nonIndexed, 'type');
-  const event = decodeParams(nonIndexedNames, nonIndexedTypes, util.hexToBuffer(data), useNumberedParams);
-  const topicOffset = eventObject.anonymous ? 0 : 1;
-
-  eventObject.inputs.filter((input) => input.indexed).map((input, i) => {
-    const topic = new Buffer(topics[i + topicOffset].slice(2), 'hex');
-    const coder = getParamCoder(input.type);
-    event[input.name] = coder.decode(topic, 0).value;
-  });
-
-  event._eventName = eventObject.name;
-
-  return event;
-}
-
-// Decode a specific log item with a specific event abi
-function decodeLogItem(eventObject, log, useNumberedParams = true) {
-  if (eventObject && log.topics[0] === eventSignature(eventObject)) {
-    return decodeEvent(eventObject, log.data, log.topics, useNumberedParams);
-  }
-}
-
-// Create a decoder for all events defined in an abi. It returns a function which is called
-// on an array of log entries such as received from getLogs or getTransactionReceipt and parses
-// any matching log entries
-function logDecoder(abi, useNumberedParams = true) {
-  const eventMap = {};
-  abi.filter(item => item.type === 'event').map(item => {
-    eventMap[eventSignature(item)] = item;
-  });
-  return function(logItems) {
-    return logItems.map(log => decodeLogItem(eventMap[log.topics[0]], log, useNumberedParams)).filter(i => i);
+/** @namespace method.inputs */
+function decodeMethod(data) {
+  const method = state.signatureIDs[data.slice(2, 10)];
+  const outputNames = util.getKeys(method.inputs, 'name', true);
+  const outputTypes = util.getKeys(method.inputs, 'type');
+  return {
+    name: method.name,
+    params: decodeParams(outputNames, outputTypes, data),
   };
 }
 
+// decode method data bytecode, from method ABI object
+function decodeEvent(data, topics) {
+  const eventObject = this.state.signatureIDs[data];
+  const nonIndexed = eventObject.inputs.filter((input) => !input.indexed);
+  const nonIndexedNames = util.getKeys(nonIndexed, 'name', true);
+  const nonIndexedTypes = util.getKeys(nonIndexed, 'type');
+  const event = decodeParams(nonIndexedNames, nonIndexedTypes, data);
+  const topicOffset = eventObject.anonymous ? 0 : 1;
+
+  eventObject.inputs.filter((input) => input.indexed).map((input, i) => {
+    const topic = Buffer.from(topics[i + topicOffset].slice(2), 'hex');
+    const coder = getParamCoder(input.type);
+    event[input.name] = coder.decode(topic, 0).value;
+  });
+  event._eventName = eventObject.name;
+  return event;
+}
+
 module.exports = {
+  stdTokenAbi,
   encodeParams,
-  decodeParams,
   encodeMethod,
-  decodeMethod,
   encodeEvent,
+  decodeParams,
+  decodeMethod,
   decodeEvent,
-  decodeLogItem,
-  logDecoder,
-  eventSignature,
-  encodeSignature,
 };

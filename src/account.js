@@ -64,8 +64,8 @@ function privateToPublic(privateKey) {
     throw new Error('private key must be an alphanumeric hex string that is 32 bytes long.');
   }
 
-  const privateKeyBuffer = new Buffer(stripHexPrefix(privateKey), 'hex');
-  return (new Buffer(secp256k1.keyFromPrivate(privateKeyBuffer).getPublic(false, 'hex'), 'hex')).slice(1);
+  const privateKeyBuffer = Buffer.from(stripHexPrefix(privateKey), 'hex');
+  return (Buffer.from(secp256k1.keyFromPrivate(privateKeyBuffer).getPublic(false, 'hex'), 'hex')).slice(1);
 }
 
 /**

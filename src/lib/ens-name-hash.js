@@ -14,7 +14,7 @@ function namehash(name) {
 
     for (i = labels.length - 1; i >= 0; i--) {
       const labelSha = keccak(labels[i]);
-      node = keccak(new Buffer(node + labelSha, 'hex'));
+      node = keccak(Buffer.from(node + labelSha, 'hex'));
     }
   }
 

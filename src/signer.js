@@ -18,7 +18,7 @@ function padToEven(str) {
 }
 
 function bnToBuffer(bn) {
-  return stripZeros(new Buffer(padToEven(bn.toString(16)), 'hex'));
+  return stripZeros(Buffer.from(padToEven(bn.toString(16)), 'hex'));
 }
 
 const transactionFields = [
@@ -42,7 +42,7 @@ const transactionFields = [
  */
 
 function recover(rawTx, v, r, s) {
-  const rawTransaction = typeof(rawTx) === 'string' ? new Buffer(stripHexPrefix(rawTx), 'hex') : rawTx;
+  const rawTransaction = typeof(rawTx) === 'string' ? Buffer.from(stripHexPrefix(rawTx), 'hex') : rawTx;
   const signedTransaction = rlp.decode(rawTransaction);
   const raw = [];
 
@@ -50,8 +50,8 @@ function recover(rawTx, v, r, s) {
     raw[fieldIndex] = signedTransaction[fieldIndex];
   });
 
-  const publicKey = secp256k1.recoverPubKey((new Buffer(keccak256(rlp.encode(raw)), 'hex')), {r, s}, v - 27);
-  return (new Buffer(publicKey.encode('hex', false), 'hex')).slice(1);
+  const publicKey = secp256k1.recoverPubKey(Buffer.from(keccak256(rlp.encode(raw)), 'hex'), {r, s}, v - 27);
+  return (Buffer.from(publicKey.encode('hex', false), 'hex')).slice(1);
 }
 
 /**
@@ -78,7 +78,7 @@ function sign(transaction, privateKey, toObject) {
   const raw = [];
 
   transactionFields.forEach((fieldInfo) => {
-    var value = new Buffer(0);
+    let value = Buffer.alloc(0);
 
     // shim for field name gas
     const txKey = (fieldInfo.name === 'gasLimit' && transaction.gas) ? 'gas' : fieldInfo.name;
@@ -87,20 +87,22 @@ function sign(transaction, privateKey, toObject) {
       if (fieldInfo.number === true) {
         value = bnToBuffer(toBN(transaction[txKey]));
       } else {
-        value = new Buffer(padToEven(stripHexPrefix(transaction[txKey])), 'hex');
+        value = Buffer.from(padToEven(stripHexPrefix(transaction[txKey])), 'hex');
       }
     }
 
     // Fixed-width field
     if (fieldInfo.length && value.length !== fieldInfo.length && value.length > 0) {
-      throw new Error(`while signing raw transaction, invalid '${fieldInfo.name}', invalid length should be '${fieldInfo.length}' got '${value.length}'`);
+      throw new Error(
+        `while signing raw transaction, invalid '${fieldInfo.name}', invalid length should be '${fieldInfo.length}' got '${value.length}'`);
     }
 
     // Variable-width (with a maximum)
     if (fieldInfo.maxLength) {
       value = stripZeros(value);
       if (value.length > fieldInfo.maxLength) {
-        throw new Error(`while signing raw transaction, invalid '${fieldInfo.name}' length, the max length is '${fieldInfo.maxLength}', got '${value.length}'`);
+        throw new Error(
+          `while signing raw transaction, invalid '${fieldInfo.name}' length, the max length is '${fieldInfo.maxLength}', got '${value.length}'`);
       }
     }
 
@@ -108,10 +110,10 @@ function sign(transaction, privateKey, toObject) {
   });
 
   // private key is not stored in memory
-  const signature = secp256k1.keyFromPrivate(new Buffer(privateKey.slice(2), 'hex'))
-                             .sign((new Buffer(keccak256(rlp.encode(raw)), 'hex')), {canonical: true});
+  const signature = secp256k1.keyFromPrivate(Buffer.from(privateKey.slice(2), 'hex')).
+                              sign(Buffer.from(keccak256(rlp.encode(raw)), 'hex'), {canonical: true});
 
-  raw.push(new Buffer([27 + signature.recoveryParam]));
+  raw.push(Buffer.from([27 + signature.recoveryParam]));
   raw.push(bnToBuffer(signature.r));
   raw.push(bnToBuffer(signature.s));
 

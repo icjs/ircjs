@@ -75,7 +75,7 @@ function Contract(opts = {}) {
         topics: filterTopics,
       });
       const filterOpts = Object.assign({}, argsObject, {
-        decoder: (logData) => abi.decodeEvent(methodObject, logData, filterTopics),
+        decoder: (logData) => abi.decodeEvent(logData, filterTopics),
         defaultFilterObject,
       });
 
@@ -122,7 +122,7 @@ function Contract(opts = {}) {
     if (queryMethod === 'call') {
       // queryMethod is 'call', result is returned value
       try {
-        return abi.decodeMethod(methodObject, queryResult);
+        return abi.decodeMethod(queryResult);
       } catch (decodeFormattingError) {
         throw new Error(`while formatting incoming raw call data ${JSON.stringify(queryResult)} ${decodeFormattingError}`);
       }

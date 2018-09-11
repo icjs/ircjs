@@ -62,7 +62,7 @@ function coderFixedBytes(length) {
 
       if (value.length === 32) { return value; }
 
-      const result = new Buffer(32);
+      const result = Buffer.alloc(32);
       result.fill(0);
       value.copy(result);
       return result;
@@ -81,7 +81,7 @@ function coderFixedBytes(length) {
 const coderAddress = {
   encode: function encodeAddress(valueInput) {
     let value = valueInput;
-    const result = new Buffer(32);
+    const result = Buffer.alloc(32);
     if (!util.isHexString(
       value,
       20)) { throw new Error('while encoding address, invalid address value, not alphanumeric 20 byte hex string'); }
@@ -107,7 +107,7 @@ const coderAddress = {
 
 function encodeDynamicBytesHelper(value) {
   const dataLength = parseInt(32 * Math.ceil(value.length / 32));
-  const padding = new Buffer(dataLength - value.length);
+  const padding = Buffer.alloc(dataLength - value.length);
   padding.fill(0);
 
   return Buffer.concat([
@@ -148,7 +148,7 @@ const coderDynamicBytes = {
 
 const coderString = {
   encode: function encodeString(value) {
-    return encodeDynamicBytesHelper(new Buffer(value, 'utf8'));
+    return encodeDynamicBytesHelper(Buffer.from(value, 'utf8'));
   },
   decode: function decodeString(data, offset) {
     const result = decodeDynamicBytesHelper(data, offset);
@@ -161,7 +161,7 @@ const coderString = {
 function coderArray(coder, lengthInput) {
   return {
     encode: function encodeArray(value) {
-      let result = new Buffer(0);
+      let result = Buffer.alloc(0);
       let length = lengthInput;
 
       if (!Array.isArray(value)) { throw new Error('while encoding array, invalid array data, not type Object (Array)'); }
