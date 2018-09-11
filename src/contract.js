@@ -106,25 +106,23 @@ function Contract(opts = {}) {
     let providedTxObject = {};
 
     if (hasTransactionObject(methodArgs)) providedTxObject = methodArgs.pop();
-    const methodTxObject = Object.assign({},
+    const methodTxObject = Object.assign(
+      {},
       self.defaultTx,
-      providedTxObject, {
-        to: self.address,
-      });
+      providedTxObject, {to: self.address});
     methodTxObject.data = abi.encodeMethod(methodObject, methodArgs);
 
     if (methodObject.constant === false) {
       queryMethod = 'sendTransaction';
     }
-
     const queryResult = await self.query[queryMethod](methodTxObject);
 
     if (queryMethod === 'call') {
       // queryMethod is 'call', result is returned value
       try {
-        return abi.decodeMethod(queryResult);
-      } catch (decodeFormattingError) {
-        throw new Error(`while formatting incoming raw call data ${JSON.stringify(queryResult)} ${decodeFormattingError}`);
+        return abi.decodeCall(methodObject, queryResult);
+      } catch (err) {
+        throw new Error(`while formatting incoming raw call data ${JSON.stringify(queryResult)} ${err}`);
       }
     }
     // queryMethod is 'sendTransaction', result is txHash

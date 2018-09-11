@@ -12,7 +12,6 @@ const state = {
 stdTokenAbi.forEach((method) => {
   if (method.name) {
     const signatureId = method.type === 'event' ? eventSignature(method) : encodeSignature(method);
-    console.log(signatureId);
     state.signatureIDs[signatureId.slice(2)] = method;
   }
 });
@@ -101,7 +100,7 @@ function decodeParams(names, types, data) {
 
   let offset = 0;
 
-  return types.keys().map(index => {
+  return [...types.keys()].map(index => {
     const coder = getParamCoder(types[index]);
     let result;
 
@@ -113,6 +112,7 @@ function decodeParams(names, types, data) {
       result = coder.decode(data, offset);
       offset += result.consumed;
     }
+
     return {
       name: names[index],
       value: result.value,
@@ -125,12 +125,20 @@ function decodeParams(names, types, data) {
 /** @namespace method.inputs */
 function decodeMethod(data) {
   const method = state.signatureIDs[data.slice(2, 10)];
-  const outputNames = util.getKeys(method.inputs, 'name', true);
-  const outputTypes = util.getKeys(method.inputs, 'type');
+  const inputNames = util.getKeys(method.inputs, 'name', true);
+  const inputTypes = util.getKeys(method.inputs, 'type');
   return {
     name: method.name,
-    params: decodeParams(outputNames, outputTypes, data),
+    params: decodeParams(inputNames, inputTypes, data),
   };
+}
+
+/** @namespace method.outputs */
+function decodeCall(method, data) {
+  // const method = state.signatureIDs[data.slice(2, 10)];
+  const outputNames = util.getKeys(method.outputs, 'name', true);
+  const outputTypes = util.getKeys(method.outputs, 'type');
+  return decodeParams(outputNames, outputTypes, data);
 }
 
 // decode method data bytecode, from method ABI object
@@ -158,5 +166,6 @@ module.exports = {
   encodeEvent,
   decodeParams,
   decodeMethod,
+  decodeCall,
   decodeEvent,
 };

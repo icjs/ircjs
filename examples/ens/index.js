@@ -3,19 +3,19 @@ const HttpProvider = require('ethjs-provider-http');
 let ens;
 
 // For MetaMask or Mist compatibility:
+/** @namespace window.webu */
 window.addEventListener('load', function() {
-
-  if (typeof window.web3 !== 'undefined') {
-    console.log('web3 browser detected, using.');
-    web3.version.getNetwork(function(err, network) {
+  if (typeof window.webu !== 'undefined') {
+    console.log('webu browser detected, using.');
+    webu.version.getNetwork(function(err, network) {
       if (err) {
         return resultField.innerText = 'There was a problem: ' + err.message;
       }
-      ens = new ENS({provider: web3.currentProvider, network: network});
+      ens = new ENS({provider: webu.currentProvider, network: network});
     });
   } else {
-    console.log('no web3 browser detected, using infura.');
-    const provider = new HttpProvider('https://mainnet.infura.io');
+    console.log('no webu browser detected, using infura.');
+    const provider = new HttpProvider('http://112.74.96.198/');
     ens = new ENS({provider, network: '1'});
   }
 
@@ -23,7 +23,7 @@ window.addEventListener('load', function() {
 
 searchButton.addEventListener('click', function() {
   console.log('clicked button.');
-  var query = lookupField.value;
+  const query = lookupField.value;
   console.log('querying for ' + query);
   ens.lookup(query)
      .then((address) => {

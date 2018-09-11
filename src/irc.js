@@ -11,7 +11,7 @@ const signer = require('./signer');
 const unit = require('./unit');
 const utils = require('./utils');
 const scanLink = require('./scan-link');
-const keccak256 = require('js-sha3').keccak_256;
+const keccak256 = utils.keccak256;
 const BN = require('bn.js');
 const getTxSuccess = require('./lib/get-tx-success');
 
