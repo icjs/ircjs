@@ -169,7 +169,7 @@ function hexToBuffer(valueInput) {
   let value = valueInput;
   if (!Buffer.isBuffer(value)) {
     if (!isHexString(value, null)) {
-      const error = new Error(name ? (`invalid ${name}`) : 'invalid hex or buffer, must be a prefixed alphanumeric even length hex string');
+      const error = new Error('invalid hex or buffer, must be a prefixed alphanumeric even length hex string');
       error.reason = 'invalid hex string, hex must be prefixed and alphanumeric (e.g. 0x023..)';
       error.value = value;
       throw error;

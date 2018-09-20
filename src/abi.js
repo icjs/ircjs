@@ -129,13 +129,12 @@ function decodeMethod(data) {
   const inputTypes = util.getKeys(method.inputs, 'type');
   return {
     name: method.name,
-    params: decodeParams(inputNames, inputTypes, data),
+    params: decodeParams(inputNames, inputTypes, '0x' + data.slice(10)),
   };
 }
 
 /** @namespace method.outputs */
 function decodeCall(method, data) {
-  // const method = state.signatureIDs[data.slice(2, 10)];
   const outputNames = util.getKeys(method.outputs, 'name', true);
   const outputTypes = util.getKeys(method.outputs, 'type');
   return decodeParams(outputNames, outputTypes, data).map(param => param.value);
